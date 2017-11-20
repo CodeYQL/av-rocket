@@ -1,7 +1,9 @@
+import { ITargetCommand, ITarget } from 'interfaces';
+
 const thunder = require("dreamcheeky-thunder-lib");
 const Promise = require("bluebird");
 
-function executeCommand(name, time) {
+function executeCommand(name: string, time: number) {
   const promiseCommand = Promise.method(() => thunder[name]());
   return promiseCommand()
     .then(() => Promise.delay(time))
@@ -27,12 +29,11 @@ function resetPosition() {
 //   commands: [{ up: 10 }, { down: 20 }, { fire: 1 }]
 // },
 
-function chainCommands(commands) {
-  const chain = commands.map((command) => {
-    const cmd = Object.keys(command)[0];
-    const time = command[cmd];
+function chainCommands(commands: ITargetCommand[]) {
+  const chain = commands.map((command: ITargetCommand) => {
+    const cmd: string = Object.keys(command)[0];
+    const time: number = command[cmd];
     
-
     return executeCommand.bind(null, cmd, time);
   });
 

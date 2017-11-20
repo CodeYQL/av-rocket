@@ -1,7 +1,10 @@
+import { ITarget, ITargetCommand } from 'interfaces';
+import { Response, Request, NextFunction } from 'express';
+
 const express = require("express");
 const app = express();
 
-const targets = [
+const targets: ITarget[] = [
   {
     name: "Chris",
     id: "1",
@@ -29,12 +32,12 @@ const targets = [
   }
 ];
 
-function getTargetById(targets, id) {
-  return targets.find(target => target.id === id);
+function getTargetById(targets: ITarget[], id: string): ITarget {
+  return targets.find((target: ITarget) => target.id === id);
 }
 
-function returnTargetById(req, res, next) {
-  const target = getTargetById(targets, req.params.id);
+function returnTargetById(req: Request, res: Response, next: NextFunction) {
+  const target: ITarget = getTargetById(targets, req.params.id);
 
   if (!target) {
     res.status(404).send("Not Found");
@@ -45,13 +48,13 @@ function returnTargetById(req, res, next) {
   return next();
 }
 
-function fireAtTargetById(targets, id) {
-  const target = targets.find(target => target.id === id);
+function fireAtTargetById(targets: ITarget[], id: string) {
+  const target = targets.find((target: ITarget) => target.id === id);
 }
 
-app.get("/", (req, res) => res.send("Hello World!"));
-app.get("/targets", (req, res) => res.send(targets));
+app.get("/", (req: Request, res: Response) => res.send("Hello World!"));
+app.get("/targets", (req: Request, res: Response) => res.send(targets));
 app.get("/targets/:id", returnTargetById);
-app.get("/targets/:id/fire", (req, res) => res.send(req.params));
+app.get("/targets/:id/fire", (req: Request, res: Response) => res.send(req.params));
 
 app.listen(3000, () => console.log("Example app listening on port 3000!"));
