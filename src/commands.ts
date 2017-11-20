@@ -1,45 +1,51 @@
-import { ITargetCommand, ITarget } from 'interfaces';
+import { ITargetCommand, ITarget } from "interfaces";
+import * as thunder from "dreamcheeky-thunder-lib";
+import * as Promise from "bluebird";
 
-const thunder = require("dreamcheeky-thunder-lib");
-const Promise = require("bluebird");
-
-function executeCommand(name: string, time: number) {
+function executeCommand(name: string, time: number): Promise<any> {
   const promiseCommand = Promise.method(() => thunder[name]());
-  return promiseCommand()
+  return promiseCommand({})
     .then(() => Promise.delay(time))
     .then(thunder.stop);
 }
 
 function resetHorizontal() {
-  return executeCommand("left", 9000).then(() => executeCommand("right", 3100));
+  return executeCommand("left", 9000)
+    .then(() => executeCommand("right", 3100));
 }
 
 function resetVertical() {
-  return executeCommand("up", 2000).then(() => executeCommand("down", 775));
+  return executeCommand("up", 2000)
+    .then(() => executeCommand("down", 775));
 }
 
 function resetPosition() {
   resetVertical().then(resetHorizontal);
 }
 
-
-// {
-//   name: "Chris",
-//   id: "1",
-//   commands: [{ up: 10 }, { down: 20 }, { fire: 1 }]
-// },
-
 function chainCommands(commands: ITargetCommand[]) {
   const chain = commands.map((command: ITargetCommand) => {
     const cmd: string = Object.keys(command)[0];
-    const time: number = command[cmd];
-    
+    let time = 0;
+
+    if(typeof command[cmd] === 'boolean') {
+      time = 3020;
+    } else {
+      time = command[cmd];
+    }
+
     return executeCommand.bind(null, cmd, time);
   });
 
-  return Promise.mapSeries(chain, (cmd) => cmd());
+  return Promise.mapSeries(chain, (cmd) => cmd())
+    .then(() => Promise.delay(1000))
+    .then(resetPosition);
 }
 
-chainCommands([{ up: 2000 }, { down: 1000 }, { fire: 1 }])
-
-// resetPosition();
+export {
+  executeCommand,
+  resetHorizontal,
+  resetVertical,
+  resetPosition,
+  chainCommands
+}

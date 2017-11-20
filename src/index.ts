@@ -1,36 +1,20 @@
-import { ITarget, ITargetCommand } from 'interfaces';
 import { Response, Request, NextFunction } from 'express';
+import * as _ from 'lodash';
+import { assert } from 'chai';
+import * as bodyParser from 'body-parser';
+const uuidv4 = require('uuid/v4');
+var cors = require('cors');
+
+import { ITarget, ITargetCommand } from './interfaces';
+import * as Commands from "./commands";
+import { targets, userInterface, commandInterface } from './state';
 
 const express = require("express");
 const app = express();
+app.use(bodyParser.json());
+app.use(cors())
 
-const targets: ITarget[] = [
-  {
-    name: "Chris",
-    id: "1",
-    commands: [{ up: 10 }, { down: 20 }, { fire: 1 }]
-  },
-  {
-    name: "Matt",
-    id: "2",
-    commands: [{ up: 10 }, { down: 20 }, { fire: 1 }]
-  },
-  {
-    name: "Juan",
-    id: "3",
-    commands: [{ up: 10 }, { down: 20 }, { fire: 1 }]
-  },
-  {
-    name: "Tyler",
-    id: "4",
-    commands: [{ up: 10 }, { down: 20 }, { fire: 1 }]
-  },
-  {
-    name: "Kevin",
-    id: "5",
-    commands: [{ up: 10 }, { down: 20 }, { fire: 1 }]
-  }
-];
+let state = 'ready';
 
 function getTargetById(targets: ITarget[], id: string): ITarget {
   return targets.find((target: ITarget) => target.id === id);
@@ -52,9 +36,106 @@ function fireAtTargetById(targets: ITarget[], id: string) {
   const target = targets.find((target: ITarget) => target.id === id);
 }
 
-app.get("/", (req: Request, res: Response) => res.send("Hello World!"));
-app.get("/targets", (req: Request, res: Response) => res.send(targets));
-app.get("/targets/:id", returnTargetById);
-app.get("/targets/:id/fire", (req: Request, res: Response) => res.send(req.params));
+function addTarget(req: Request, res: Response, next: NextFunction) {
+  const user: ITarget = _.cloneDeep(req.body);
+  _.set(user, 'id', uuidv4());
 
-app.listen(3000, () => console.log("Example app listening on port 3000!"));
+  // try {
+  //   assert.hasAllDeepKeys(user, userInterface);
+  //   assert.hasAllDeepKeys(user, commandInterface);
+  // } catch (err) {
+  //   res.send(err);
+  //   res.end();
+  //   return next();
+  // }
+  targets.push(user);
+
+  res.send(user);
+  res.end();
+  return next();
+}
+
+function removeTarget(req: Request, res: Response, next: NextFunction) {
+  const targetIndex = targets.findIndex((target: ITarget) => target.id === req.params.id);
+
+  if (targetIndex === -1) {
+    res.status(404);
+    res.send("Trying to delete non-existent target!");
+    res.end();
+    return next();
+  }
+
+  targets.splice(targetIndex, 1);
+  res.send(targets);
+  res.end();
+  return next();
+}
+
+function updateTarget(req: Request, res: Response, next: NextFunction) {
+  const user: ITarget = _.cloneDeep(req.body);
+
+  const targetIndex = targets.findIndex((target: ITarget) => target.id === req.params.id);
+  delete user.id
+
+  const editedUser: ITarget = {
+    ...user,
+    id: req.params.id,
+  };
+
+  targets[targetIndex] = editedUser;
+  res.send(targets[targetIndex]);
+  res.end();
+  return next();
+}
+
+function fireAtTarget(req: Request, res: Response, next: NextFunction) {
+  const id = req.params.id;
+
+  const target = targets.find((target : ITarget) => target.id === id);
+  state = "firing";
+  Commands.chainCommands(target.commands).then(() => {
+    res.send('success');
+    state = "ready";
+    res.end();
+    return next();
+  })
+}
+
+function getState(req: Request, res: Response, next: NextFunction) {
+  res.send({state});
+  res.end();
+  return next();
+}
+
+function resetPosition(req: Request, res: Response, next: NextFunction) {
+  Commands.resetPosition();
+
+  res.send('Resetting Position');
+  res.end();
+  return next();
+}
+
+app.get("/reset", resetPosition);
+app.get("/targets", (req: Request, res: Response) => res.send(targets));
+app.post("/targets", addTarget);
+
+app.get("/targets/:id", returnTargetById);
+app.put("/targets/:id", updateTarget);
+app.delete("/targets/:id", removeTarget);
+
+app.get("/targets/:id/fire", fireAtTarget);
+
+app.get("/state", getState);
+
+app.get("/", (req: Request, res: Response) => {
+  res.send([
+    {"/targets": [{method: 'GET', description: 'Get list of targets'}, {method: 'POST', description: 'Post a new target'}]},
+    {"/targets/:id": [{method: 'GET'}, {method: 'PUT'}, {method: 'DELETE'}]},
+    {"/targets/:id/fire": {method: 'GET'}},
+    {"/state": {method: 'GET'}}
+  ]);
+
+  res.end();
+});
+
+app.listen(3000, () => console.log("CTBR listening on port 3000!"));

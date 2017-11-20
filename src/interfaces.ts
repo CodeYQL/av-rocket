@@ -5,5 +5,5 @@ export interface ITarget {
 }
 
 export interface ITargetCommand {
-  [key: string]: number;
+  [key: string]: any;
 }
