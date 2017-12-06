@@ -26,7 +26,7 @@ function resetPosition() {
 function chainCommands(commands: ITargetCommand[]) {
   const chain = commands.map((command: ITargetCommand) => {
     const cmd: string = Object.keys(command)[0];
-    let time = 0;
+    let time: number = 0;
 
     if(typeof command[cmd] === 'boolean') {
       time = 3020;

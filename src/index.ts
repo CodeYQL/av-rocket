@@ -2,8 +2,8 @@ import { Response, Request, NextFunction } from 'express';
 import * as _ from 'lodash';
 import { assert } from 'chai';
 import * as bodyParser from 'body-parser';
-const uuidv4 = require('uuid/v4');
-var cors = require('cors');
+import * as uuidv4 from 'uuid/v4'
+import * as cors from 'cors';
 
 import { ITarget, ITargetCommand } from './interfaces';
 import * as Commands from "./commands";
@@ -14,7 +14,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors())
 
-let state = 'ready';
+let state: string = 'ready';
 
 function getTargetById(targets: ITarget[], id: string): ITarget {
   return targets.find((target: ITarget) => target.id === id);
@@ -40,14 +40,6 @@ function addTarget(req: Request, res: Response, next: NextFunction) {
   const user: ITarget = _.cloneDeep(req.body);
   _.set(user, 'id', uuidv4());
 
-  // try {
-  //   assert.hasAllDeepKeys(user, userInterface);
-  //   assert.hasAllDeepKeys(user, commandInterface);
-  // } catch (err) {
-  //   res.send(err);
-  //   res.end();
-  //   return next();
-  // }
   targets.push(user);
 
   res.send(user);
