@@ -1,7 +1,7 @@
 {
     "exclude": ["node_modules/**"],
     "compilerOptions": {
-        "target": "es5",
+        "target": "es6",
         "sourceMap": true,
         "outDir": "./dist",
         "baseUrl": "src",
